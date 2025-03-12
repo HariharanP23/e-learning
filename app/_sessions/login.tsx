@@ -27,6 +27,7 @@ export default function LoginPage() {
         throw new Error(data.message || 'Something went wrong');
       }
 
+      window.location.href = '/';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to login');
     } finally {

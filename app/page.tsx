@@ -2,6 +2,7 @@ import { getServerSession } from '@/lib/server-session';
 import LoginPage from "@/app/_sessions/login";
 import { Suspense } from 'react';
 import Loader from './_shared/loader';
+import DashboardPage from './_sessions/dashboardPage';
 
 export default async function Home() {
   const sessionData = await getServerSession();
@@ -15,7 +16,7 @@ export default async function Home() {
     <main className="font-sans bg-cream">
       <Suspense fallback={<Loading />}>
         {sessionData?.user ? (
-          <p>test success</p>
+          <DashboardPage sessionData={sessionData}/>
         ) : (
           <LoginPage />
         )}
