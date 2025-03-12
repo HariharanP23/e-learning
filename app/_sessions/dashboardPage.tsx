@@ -1,42 +1,64 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { 
-  Home, 
-  Users, 
-  ShoppingBag, 
-  BarChart2, 
   Settings, 
-  HelpCircle, 
-  Menu, 
-  X, 
-  Bell, 
   ChevronDown, 
   User, 
   LogOut, 
-  Calendar as CalendarIcon, 
-  CheckSquare, Star, Heart, MessageSquare,
-  Plus, MoreVertical,
+  Plus,
 } from 'lucide-react';
 import LeftSidebar from './leftSidebar';
 import CoursesPage from './courses';
 import { SessionData } from '@/auth/auth';
+import axios from 'axios';
 
 interface DashboardPageProps {
   sessionData: SessionData;
+}
+
+interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  createdAt: string;
 }
 
 export default function DashboardPage({ sessionData }: DashboardPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [todos, setTodos] = useState([
     { id: 1, text: 'Review project proposal', completed: false },
     { id: 2, text: 'Schedule team meeting', completed: true },
     { id: 3, text: 'Update client documentation', completed: false },
   ]);
   const [newTodo, setNewTodo] = useState('');
+
+  useEffect(() => {
+    async function fetchCourses() {
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/announcements`, {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${sessionData?.user?.accessToken}`,
+          },
+        });
+        setAnnouncements(response.data.data);
+      } catch (err) {
+        setError('Failed to load courses');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchCourses();
+  }, []); 
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -56,9 +78,6 @@ export default function DashboardPage({ sessionData }: DashboardPageProps) {
     ));
   };
 
-  
-
-
   return (
     <div className="flex h-screen bg-gray-50">
       <LeftSidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
@@ -70,12 +89,6 @@ export default function DashboardPage({ sessionData }: DashboardPageProps) {
             <h1 className="text-2xl font-semibold text-gray-800">Welcome Back</h1>
             
             <div className="flex items-center space-x-4">
-              {/* Notifications */}
-              <button className="p-2 text-gray-500 hover:text-gray-700 relative">
-                <Bell size={20} />
-                <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
-              </button>
-              
               {/* Language Selector */}
               <div className="relative">
                 <button 
@@ -99,11 +112,11 @@ export default function DashboardPage({ sessionData }: DashboardPageProps) {
                   className="flex items-center space-x-3 focus:outline-none"
                 >
                   <div className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white">
-                    <span className="text-sm font-medium">JS</span>
+                    <span className="text-sm font-medium">{sessionData?.user?.name?.slice(0, 2)}</span>
                   </div>
                   <div className="hidden md:block">
-                    <div className="text-sm font-medium text-gray-700">John Smith</div>
-                    <div className="text-xs text-gray-500">Administrator</div>
+                    <div className="text-sm font-medium text-gray-700">{sessionData?.user?.name}</div>
+                    <div className="text-xs text-gray-500">{sessionData?.user?.role}</div>
                   </div>
                   <ChevronDown size={16} className="text-gray-500" />
                 </button>
@@ -135,7 +148,17 @@ export default function DashboardPage({ sessionData }: DashboardPageProps) {
 
           {/* Right Sidebar */}
           <aside className="hidden lg:block w-80 bg-white border-l border-gray-200 p-5 overflow-y-auto">
-            {/* To-Do Widget */}
+          <div>
+            <h3 className="font-semibold text-gray-700 mb-4">Recent Announcements</h3>
+            <div className="space-y-3">
+              {announcements.map((announcement) => (
+                <div key={announcement.id} className="border-b pb-2">
+                  <h4 className="text-sm font-medium text-gray-800">{announcement.title}</h4>
+                  <p className="text-xs text-gray-500">{new Date(announcement.createdAt).toLocaleDateString()}</p>
+                </div>
+              ))}
+            </div>
+          </div>
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-700">To-Do List</h3>
